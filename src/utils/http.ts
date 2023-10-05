@@ -1,7 +1,7 @@
 import { useMemberStore } from '@/stores/modules/member'
 
+// 基础地址
 const baseURL = 'https://pcapi-xiaotuxian-front-devtest.itheima.net'
-
 // 添加拦截器
 const httpInterceptor = {
   // 拦截前触发
@@ -29,5 +29,13 @@ const httpInterceptor = {
     console.log(options)
   },
 }
+/*
+// 添加拦截器，第一个参数是需要拦截的api名称，第二个参数是配置项
+invoke	Function	否		拦截前触发
+returnValue	Function	否		方法调用后触发，处理返回值
+success	Function	否		成功回调拦截
+fail	Function	否		失败回调拦截
+complete	Function	否		完成回调拦截
+*/
 uni.addInterceptor('request', httpInterceptor)
 uni.addInterceptor('uploadFile', httpInterceptor)

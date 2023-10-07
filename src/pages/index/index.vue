@@ -1,19 +1,39 @@
-<script setup lang="ts">
-//
-</script>
-
 <template>
-  <uni-card
-    title="基础卡片"
-    sub-title="副标题"
-    extra="额外信息"
-    thumbnail="https://qiniu-web-assets.dcloud.net.cn/unidoc/zh/unicloudlogo.png"
-  >
-    <text>这是一个带头像和双标题的基础卡片，此示例展示了一个完整的卡片。</text>
-  </uni-card>
-  <view class="index">index</view>
+  <view>
+    <NavBar />
+  </view>
+  <XmlSwiper :list="bannerList" />
+  <CategoryPanel />
+  <view>index</view>
 </template>
 
+<script setup lang="ts">
+// 引入子组件
+import NavBar from './components/NavBar.vue'
+import CategoryPanel from './components/CategoryPanel.vue'
+// 引入API
+import { getHomeBannerApi } from '@/services/Home'
+// 引入生命周期
+import { onLoad } from '@dcloudio/uni-app'
+import { ref } from 'vue'
+// 引入类型
+import type { BannerItem } from '@/types/Home'
+// 存储轮播图数据
+const bannerList = ref<BannerItem[]>([])
+
+// 获取轮播图数据
+const getHomeBannerData = async () => {
+  const res = await getHomeBannerApi()
+  bannerList.value = res.result
+}
+// 页面加载的生命周期
+onLoad(() => {
+  getHomeBannerData()
+})
+</script>
+
 <style lang="scss">
-//
+page {
+  background-color: #f7f7f7;
+}
 </style>

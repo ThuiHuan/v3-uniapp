@@ -1,3 +1,4 @@
+<!-- 顶部导航栏 -->
 <template>
   <view class="navbar" :style="{ paddingTop: safeAreaInsets?.top + 'px' }">
     <!-- logo文字 -->
@@ -14,7 +15,6 @@
 </template>
 <script setup lang="ts">
 // 安全区域
-// import { safeAreaInsets } from ''
 // 获取屏幕边界到安全区域的距离
 const { safeAreaInsets } = uni.getSystemInfoSync()
 </script>

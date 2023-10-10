@@ -13,8 +13,9 @@ export type PageResult<T> = {
 }
 //页码与条数
 export type PageParams = {
-  page: string
-  pageSize: string
+  id?: string
+  page: number
+  pageSize: number
 }
 // 通用的商品类型
 export type GoodsItem = {

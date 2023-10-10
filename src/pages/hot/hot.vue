@@ -2,6 +2,7 @@
 <script setup lang="ts">
 import { getHotRecommendApi } from '@/services/Hot'
 import type { SubTypeItem } from '@/types/Hot'
+import type { PageParams } from '@/types/global'
 import { onLoad } from '@dcloudio/uni-app'
 import { ref } from 'vue'
 
@@ -21,8 +22,8 @@ const query = defineProps<{
 const activeIndex = ref(0)
 // 请求的顶部图片
 const bannerPicture = ref('')
-// 请求的类型
-const subTypes = ref<SubTypeItem[]>([])
+// 请求的类型对应的数据
+const subTypes = ref<(SubTypeItem & { finish?: boolean })[]>([])
 // 寻找需要的type
 const currHotType = hotMap.find((v) => v.type === query.type)
 // 动态设置标题
@@ -30,8 +31,15 @@ uni.setNavigationBarTitle({ title: currHotType!.title })
 
 // 获取热门推荐数据
 const getHotRecommendData = async () => {
-  const res = await getHotRecommendApi(currHotType!.url)
+  const res = await getHotRecommendApi(
+    currHotType!.url,
+    import.meta.env.DEV ? '' : '',
+    // 技巧：环境变量，开发环境，修改初始页面方便测试分页结束
+    import.meta.env.DEV ? 33 : 1,
+  )
+  // 顶部图片
   bannerPicture.value = res.result.bannerPicture
+  // 当前类型的数据
   subTypes.value = res.result.subTypes
 }
 
@@ -39,6 +47,32 @@ const getHotRecommendData = async () => {
 onLoad(() => {
   getHotRecommendData()
 })
+// 滑动触底事件
+const onScrollToLower = async () => {
+  // console.log(subTypes.value)
+  // console.log(subTypes.value[activeIndex.value])
+  // 获取当前选项对应的数据
+  const currsubTypes = subTypes.value[activeIndex.value]
+  // 分页条件
+  if (currsubTypes.goodsItems.page < currsubTypes.goodsItems.pages) {
+    // 当前页码累加
+    currsubTypes.goodsItems.page++
+  } else {
+    // 标记已结束
+    currsubTypes.finish = true
+    // 退出并轻提示
+    return uni.showToast({ icon: 'none', title: '没有更多数据了~' })
+  }
+  const res = await getHotRecommendApi(
+    currHotType!.url,
+    currsubTypes.id,
+    currsubTypes.goodsItems.page,
+  )
+  // 请求来的数据
+  const newsubTypes = res.result.subTypes[activeIndex.value]
+  //  存储商品数据.数组追加
+  currsubTypes.goodsItems.items.push(...newsubTypes.goodsItems.items)
+}
 </script>
 
 <template>
@@ -66,6 +100,7 @@ onLoad(() => {
       v-for="(item, index) in subTypes"
       v-show="activeIndex === index"
       :key="item.id"
+      @scrolltolower="onScrollToLower"
     >
       <view class="goods">
         <navigator
@@ -83,7 +118,9 @@ onLoad(() => {
           </view>
         </navigator>
       </view>
-      <view class="loading-text">正在加载...</view>
+      <view class="loading-text">
+        {{ item.finish ? '没有更多数据了~' : '正在加载...' }}
+      </view>
     </scroll-view>
   </view>
 </template>

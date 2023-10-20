@@ -92,8 +92,10 @@
 			}
 		]
 	},
+  // 分包的加载规则
 	"subPackages": [
 		{
+      // 子包的根目录
 			"root": "pagesMember",
 			"pages": [
 				{
@@ -104,5 +106,15 @@
 				}
 			]
 		}
-	]
+	],
+  // 分包规则
+  "preloadRule": {
+    // 打开什么页面时进行分包
+    "pages/my/my":{
+      // 网络环境
+      "network": "all",
+      //
+      "packages": ["pagesMember"]
+    }
+  }
 }

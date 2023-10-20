@@ -1,52 +1,77 @@
 <script setup lang="ts">
-// import { uni } from '@dcloudio/uni-h5'
+import { getGoodsByIdAPI } from '@/services/goods'
+import type { GoodsData } from '@/types/Goods'
+import { onLoad, onShow } from '@dcloudio/uni-app'
+import { ref } from 'vue'
+import ServicePanel from './components/ServicePanel.vue'
+import AddressPanel from './components/AddressPanel.vue'
+import goodsSkeleton from './components/goodsSkeleton.vue'
 
+// 骨架屏
+let isLoading = ref(false)
 // 获取屏幕边界到安全区域距离
-// const { safeAreaInsets } = uni.getSystemInfoSync()
+const { safeAreaInsets } = uni.getSystemInfoSync()
+// 获取其他页面传递过来的id数据
+const query = defineProps<{
+  id: string
+}>()
+// 存储goods数据
+const goods = ref<GoodsData>()
+// 轮播的下标
+const currentIndex = ref(0)
+// 弹出层的实例对象
+const popup = ref<{
+  open: () => void
+  close: () => void
+}>()
+// 控制弹出层条件渲染
+const popName = ref<'address' | 'service'>()
+// 基于popName的类型拿到具体的类型
+const openPopup = (name: typeof popName.value) => {
+  // 修改弹出层名称
+  popName.value = name
+  // 打开弹出层
+  popup.value?.open()
+}
+
+// 轮播滑动事件
+const OnChange = (e: any) => {
+  currentIndex.value = e.detail.current
+}
+// 轮播的点击事件
+const full = (url: string) => {
+  // 预览Api
+  uni.previewImage({
+    current: url,
+    urls: goods.value!.mainPictures,
+  })
+}
+// 获取数据
+const getGoodsData = async () => {
+  const res = await getGoodsByIdAPI(query.id)
+  goods.value = res.result
+}
+onShow(async () => {
+  await getGoodsData()
+  isLoading.value = true
+})
 </script>
 
 <template>
-  <scroll-view scroll-y class="viewport">
+  <scroll-view scroll-y class="viewport" v-if="isLoading">
     <!-- 基本信息 -->
     <view class="goods">
       <!-- 商品主图 -->
       <view class="preview">
-        <swiper circular>
-          <swiper-item>
-            <image
-              mode="aspectFill"
-              src="https://yanxuan-item.nosdn.127.net/99c83709ca5f9fd5c5bb35d207ad7822.png"
-            />
-          </swiper-item>
-          <swiper-item>
-            <image
-              mode="aspectFill"
-              src="https://yanxuan-item.nosdn.127.net/f9107d47c08f0b99c097e30055c39e1a.png"
-            />
-          </swiper-item>
-          <swiper-item>
-            <image
-              mode="aspectFill"
-              src="https://yanxuan-item.nosdn.127.net/754c56785cc8c39f7414752f62d79872.png"
-            />
-          </swiper-item>
-          <swiper-item>
-            <image
-              mode="aspectFill"
-              src="https://yanxuan-item.nosdn.127.net/ef16f8127610ef56a2a10466d6dae157.jpg"
-            />
-          </swiper-item>
-          <swiper-item>
-            <image
-              mode="aspectFill"
-              src="https://yanxuan-item.nosdn.127.net/1f0c3f5d32b0e804deb9b3d56ea6c3b2.png"
-            />
+        <swiper circular @change="OnChange" :interval="3000" autoplay>
+          <swiper-item v-for="item in goods?.mainPictures" :key="item">
+            <image mode="aspectFill" :src="item" @tap="full(item)" />
           </swiper-item>
         </swiper>
         <view class="indicator">
-          <text class="current">1</text>
+          <text class="current">{{ currentIndex + 1 }}</text>
           <text class="split">/</text>
-          <text class="total">5</text>
+          <text class="total">{{ goods?.mainPictures.length }}</text>
         </view>
       </view>
 
@@ -54,10 +79,10 @@
       <view class="meta">
         <view class="price">
           <text class="symbol">¥</text>
-          <text class="number">29.90</text>
+          <text class="number">{{ goods?.price }}</text>
         </view>
-        <view class="name ellipsis">云珍·轻软旅行长绒棉方巾 </view>
-        <view class="desc"> 轻巧无捻小方巾，旅行便携 </view>
+        <view class="name ellipsis">{{ goods?.name }} </view>
+        <view class="desc"> {{ goods?.desc }} </view>
       </view>
 
       <!-- 操作面板 -->
@@ -66,11 +91,11 @@
           <text class="label">选择</text>
           <text class="text ellipsis"> 请选择商品规格 </text>
         </view>
-        <view class="item arrow">
+        <view class="item arrow" @tap="openPopup('address')">
           <text class="label">送至</text>
           <text class="text ellipsis"> 请选择收获地址 </text>
         </view>
-        <view class="item arrow">
+        <view class="item arrow" @tap="openPopup('service')">
           <text class="label">服务</text>
           <text class="text ellipsis"> 无忧退 快速退款 免费包邮 </text>
         </view>
@@ -85,23 +110,17 @@
       <view class="content">
         <view class="properties">
           <!-- 属性详情 -->
-          <view class="item">
-            <text class="label">属性名</text>
-            <text class="value">属性值</text>
-          </view>
-          <view class="item">
-            <text class="label">属性名</text>
-            <text class="value">属性值</text>
+          <view class="item" v-for="item in goods?.details.properties" :key="item.name">
+            <text class="label">{{ item.name }}</text>
+            <text class="value">{{ item.value }}</text>
           </view>
         </view>
         <!-- 图片详情 -->
         <image
+          v-for="item in goods?.details.pictures"
+          :key="item"
           mode="widthFix"
-          src="https://yanxuan-item.nosdn.127.net/a8d266886d31f6eb0d7333c815769305.jpg"
-        ></image>
-        <image
-          mode="widthFix"
-          src="https://yanxuan-item.nosdn.127.net/a9bee1cb53d72e6cdcda210071cbd46a.jpg"
+          :src="item"
         ></image>
       </view>
     </view>
@@ -113,43 +132,45 @@
       </view>
       <view class="content">
         <navigator
-          v-for="item in 4"
-          :key="item"
+          v-for="item in goods?.similarProducts"
+          :key="item.id"
           class="goods"
           hover-class="none"
-          :url="`/pages/goods/goods?id=`"
+          :url="`/pages/goods/goods?id=${item.id}`"
         >
-          <image
-            class="image"
-            mode="aspectFill"
-            src="https://yanxuan-item.nosdn.127.net/e0cea368f41da1587b3b7fc523f169d7.png"
-          ></image>
-          <view class="name ellipsis">简约山形纹全棉提花毛巾</view>
+          <image class="image" mode="aspectFill" :src="item.picture"></image>
+          <view class="name ellipsis">{{ item.name }}</view>
           <view class="price">
             <text class="symbol">¥</text>
-            <text class="number">18.50</text>
+            <text class="number">{{ item.price }}</text>
           </view>
         </navigator>
       </view>
     </view>
-  </scroll-view>
 
-  <!-- 用户操作 -->
-  <view class="toolbar" :style="{ paddingBottom: safeAreaInsets?.bottom + 'px' }">
-    <view class="icons">
-      <button class="icons-button"><text class="icon-heart"></text>收藏</button>
-      <button class="icons-button" open-type="contact">
-        <text class="icon-handset"></text>客服
-      </button>
-      <navigator class="icons-button" url="/pages/cart/cart" open-type="switchTab">
-        <text class="icon-cart"></text>购物车
-      </navigator>
+    <!-- 用户操作 -->
+    <view class="toolbar" :style="{ paddingBottom: safeAreaInsets?.bottom + 'px' }">
+      <view class="icons">
+        <button class="icons-button"><text class="icon-heart"></text>收藏</button>
+        <button class="icons-button" open-type="contact">
+          <text class="icon-handset"></text>客服
+        </button>
+        <navigator class="icons-button" url="/pages/cart/cart" open-type="switchTab">
+          <text class="icon-cart"></text>购物车
+        </navigator>
+      </view>
+      <view class="buttons">
+        <view class="addcart"> 加入购物车 </view>
+        <view class="buynow"> 立即购买 </view>
+      </view>
     </view>
-    <view class="buttons">
-      <view class="addcart"> 加入购物车 </view>
-      <view class="buynow"> 立即购买 </view>
-    </view>
-  </view>
+  </scroll-view>
+  <goodsSkeleton v-else />
+  <!-- 弹出层交互 -->
+  <uni-popup ref="popup" type="bottom" style="background-color: #fff">
+    <ServicePanel v-if="popName == 'service'" @close="popup?.close()" />
+    <AddressPanel v-if="popName == 'address'" @close="popup?.close()" />
+  </uni-popup>
 </template>
 
 <style lang="scss">

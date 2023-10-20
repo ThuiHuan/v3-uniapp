@@ -69,8 +69,8 @@ onLoad(async () => {
       <!-- 右侧：二级分类 -->
       <scroll-view class="secondary" scroll-y>
         <!-- 轮播图 -->
-        <view>
-          <swiper indicator-dots autoplay circular>
+        <view class="swiper">
+          <swiper indicator-dots autoplay circular :interval="3000">
             <swiper-item v-for="item in bannerData" :key="item.id">
               <image :src="item.imgUrl" mode="scaleToFill" />
             </swiper-item>
@@ -246,6 +246,6 @@ page {
 }
 swiper {
   width: 100%;
-  height: 300rpx;
+  height: 250rpx;
 }
 </style>

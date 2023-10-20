@@ -5,13 +5,15 @@ import type { PageResult } from '@/types/global'
 import { onMounted, ref } from 'vue'
 let guessLikeList = ref<GuessLike[]>([])
 const page = ref(1)
-const pagesize = ref(10)
+const pagesize = ref(4)
 // 分页结束的标记
 const finish = ref(false)
 
 // 请求猜你喜欢数据
 const getGuess = async () => {
   // 退出判断
+  console.log(finish.value)
+
   if (finish.value === true) {
     return uni.showToast({
       icon: 'none',
@@ -22,7 +24,7 @@ const getGuess = async () => {
   // 数组追加 展开数组避免累加
   guessLikeList.value.push(...res.result.items)
   // 分页条件
-  if (page.value * pagesize.value < res.result.counts) {
+  if (page.value < res.result.pages) {
     page.value++
   } else {
     finish.value = true
@@ -58,7 +60,7 @@ defineExpose({
       class="guess-item"
       v-for="item in guessLikeList"
       :key="item.id"
-      :url="`/pages/goods/goods?id=4007498`"
+      :url="`/pages/goods/goods?id=${item.id}`"
     >
       <image class="image" mode="aspectFill" :src="item.picture"></image>
       <view class="name">{{ item.name }} </view>

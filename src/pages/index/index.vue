@@ -5,7 +5,7 @@
     refresher-enabled
     @refresherrefresh="Onrefresherrefresh"
     :refresher-triggered="flag"
-    @scrolltolower="onScrollToLower"
+    @scrolltolower="onScrolltolower"
     class="scoll"
     scroll-y
   >
@@ -39,6 +39,7 @@ import type { BannerItem, CategoryItem, HotPanelItem } from '@/types/Home'
 import { ref } from 'vue'
 import XmlGuess from '@/components/XmlGuess.vue'
 import type { XmlGuessInstance } from '@/types/component'
+import { useGuessList } from '@/composables'
 
 // 存储轮播图数据
 const bannerList = ref<BannerItem[]>([])
@@ -46,12 +47,18 @@ const bannerList = ref<BannerItem[]>([])
 let Catergory = ref<CategoryItem[]>([])
 // 存储热门推荐数据
 let hotPanelList = ref<HotPanelItem[]>([])
-// 获取猜你喜欢组件实例
-const guessRef = ref<XmlGuessInstance>()
 // 动画的开关
 const flag = ref(true)
 // 是否显示骨架屏
 const isLoading = ref(false)
+
+// // 获取猜你喜欢组件实例
+// const guessRef = ref<XmlGuessInstance>()
+// // 滚动触底事件
+// const onScrollToLower = () => {
+//   guessRef.value?.getMore()
+// }
+const { guessRef, onScrolltolower } = useGuessList()
 
 // 获取轮播图数据
 const getHomeBannerData = async () => {
@@ -91,11 +98,6 @@ onLoad(async () => {
   // 关闭骨架屏
   isLoading.value = false
 })
-
-// 滚动触底事件
-const onScrollToLower = () => {
-  guessRef.value?.getMore()
-}
 </script>
 
 <style lang="scss">

@@ -3,8 +3,6 @@
 <script setup lang="ts">
 import { useGuessList } from '@/composables'
 import { useMemberStore } from '@/stores'
-import type { XmlGuessInstance } from '@/types/component'
-import { onShow } from '@dcloudio/uni-app'
 import { ref } from 'vue'
 
 const memberStore = useMemberStore()

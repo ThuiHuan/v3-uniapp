@@ -12,7 +12,6 @@ const finish = ref(false)
 // 请求猜你喜欢数据
 const getGuess = async () => {
   // 退出判断
-  console.log(finish.value)
 
   if (finish.value === true) {
     return uni.showToast({

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { getGuessLikeApi } from '@/services/Home'
 import type { GuessLike } from '@/types/Home'
-import type { PageResult } from '@/types/global'
 import { onMounted, ref } from 'vue'
 let guessLikeList = ref<GuessLike[]>([])
 const page = ref(1)

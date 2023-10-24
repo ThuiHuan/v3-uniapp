@@ -6,6 +6,7 @@ import { ref } from 'vue'
 import ServicePanel from './components/ServicePanel.vue'
 import AddressPanel from './components/AddressPanel.vue'
 import goodsSkeleton from './components/goodsSkeleton.vue'
+import type { SkuPopupLocaldata } from '@/components/vk-data-goods-sku-popup/vk-data-goods-sku-popup'
 
 // 骨架屏
 let isLoading = ref(false)
@@ -46,18 +47,43 @@ const full = (url: string) => {
     urls: goods.value!.mainPictures,
   })
 }
+// 商品信息
+const localdata = ref({} as SkuPopupLocaldata)
 // 获取数据
 const getGoodsData = async () => {
   const res = await getGoodsByIdAPI(query.id)
   goods.value = res.result
+  // sku组件所需格式
+  localdata.value = {
+    _id: res.result.id,
+    name: res.result.name,
+    goods_thumb: res.result.mainPictures[0],
+    spec_list: res.result.specs.map((v) => ({ name: v.name, list: v.values })),
+    sku_list: res.result.skus.map((v) => ({
+      _id: v.id,
+      goods_id: res.result.id,
+      goods_name: res.result.name,
+      image: v.picture,
+      price: (v.price as unknown as number) * 100, // 注意：需要乘以 100
+      stock: v.inventory,
+      sku_name_arr: v.specs.map((vv) => vv.valueName),
+    })),
+  }
 }
 onShow(async () => {
   await getGoodsData()
   isLoading.value = true
 })
+// 弹窗开关
+const isShowSku = ref(false)
+const isShow = () => {
+  isShowSku.value = true
+}
 </script>
 
 <template>
+  <!-- sku弹窗组件 -->
+  <vk-data-goods-sku-popup v-model="isShowSku" :localdata="localdata" />
   <scroll-view scroll-y class="viewport" v-if="isLoading">
     <!-- 基本信息 -->
     <view class="goods">
@@ -87,7 +113,7 @@ onShow(async () => {
 
       <!-- 操作面板 -->
       <view class="action">
-        <view class="item arrow">
+        <view class="item arrow" @tap="isShow">
           <text class="label">选择</text>
           <text class="text ellipsis"> 请选择商品规格 </text>
         </view>

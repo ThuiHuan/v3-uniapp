@@ -1,7 +1,7 @@
 {
 	// 组件自动导入
 	"easycom": {
-    // 自动扫描
+		// 自动扫描
 		"autoscan": true,
 		"custom": {
 			// uni-ui 规则如下配置  // [!code ++]
@@ -121,6 +121,17 @@
 					"path": "address-form/address-form",
 					"style": {
 						"navigationBarTitleText": "地址表单"
+					}
+				}
+			]
+		},
+		{
+			"root": "pagesOrder",
+			"pages": [
+				{
+					"path": "create/create",
+					"style": {
+						"navigationBarTitleText": "填写订单"
 					}
 				}
 			]

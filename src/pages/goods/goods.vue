@@ -7,9 +7,11 @@ import ServicePanel from './components/ServicePanel.vue'
 import AddressPanel from './components/AddressPanel.vue'
 import goodsSkeleton from './components/goodsSkeleton.vue'
 import type {
+  SkuPopupEvent,
   SkuPopupInstance,
   SkuPopupLocaldata,
 } from '@/components/vk-data-goods-sku-popup/vk-data-goods-sku-popup'
+import { postMemberCartAPI } from '@/services/carts'
 
 // 骨架屏
 let isLoading = ref(false)
@@ -101,6 +103,13 @@ const skuPopupRef = ref<SkuPopupInstance>()
 const selectArrText = computed(() => {
   return skuPopupRef.value?.selectArr?.join(' ').trim() || '请选择商品规格'
 })
+
+// 加入购物车事件
+const onAddCart = async (ev: SkuPopupEvent) => {
+  await postMemberCartAPI({ skuId: ev._id, count: ev.buy_num })
+  uni.showToast({ title: '添加成功' })
+  isShowSku.value = false
+}
 </script>
 
 <template>
@@ -117,6 +126,7 @@ const selectArrText = computed(() => {
       borderColor: '#27BA9B',
       backgroundColor: '#E9F8F5',
     }"
+    @add-cart="onAddCart"
   />
   <scroll-view scroll-y class="viewport" v-if="isLoading">
     <!-- 基本信息 -->

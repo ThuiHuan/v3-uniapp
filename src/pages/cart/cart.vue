@@ -6,4 +6,8 @@
 import cartMain from './components/cartMain.vue'
 </script>
 
-<style scoped></style>
+<style lang="scss">
+page {
+  height: 100%;
+}
+</style>

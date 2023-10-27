@@ -137,6 +137,9 @@
 </template>
 
 <style scoped>
+/* #ifdef H5 */
+@import './styles/detail.scss';
+/* #endif */
 .sk-transparent {
   color: transparent !important;
 }

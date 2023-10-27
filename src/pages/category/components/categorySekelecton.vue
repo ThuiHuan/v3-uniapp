@@ -151,6 +151,9 @@
   </view>
 </template>
 <style scoped>
+/* #ifdef H5 */
+@import '../styles/category.scss';
+/* #endif */
 .sk-transparent {
   color: transparent !important;
 }

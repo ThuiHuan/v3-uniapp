@@ -110,7 +110,7 @@ const { guessRef, onScrolltolower } = useGuessList()
     <!-- 已登录: 显示购物车 -->
     <template v-if="memberStore.profile">
       <!-- 购物车列表 -->
-      <view class="cart-list" v-if="true">
+      <view class="cart-list" v-if="cartList.length > 0">
         <!-- 优惠提示 -->
         <view class="tips">
           <text class="label">满减</text>
@@ -170,7 +170,7 @@ const { guessRef, onScrolltolower } = useGuessList()
       </view>
       <!-- 吸底工具栏 -->
       <view class="toolbar">
-        <text class="all" :class="{ checked: true }" @tap="onChangeSelectedAll">全选</text>
+        <text class="all" :class="{ checked: isSelectedAll }" @tap="onChangeSelectedAll">全选</text>
         <text class="text">合计:</text>
         <text class="amount">{{ selectedCartListMoney }}</text>
         <view class="button-grounp">

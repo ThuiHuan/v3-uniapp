@@ -3,26 +3,27 @@ import { postLoginWxminApi } from '@/services/login'
 import { useMemberStore } from '@/stores'
 import type { LoginResult } from '@/types/login'
 import { onLoad } from '@dcloudio/uni-app'
+import { computed } from 'vue'
+import { ref } from 'vue'
 
+// #ifdef MP-WEIXIN
 // 存储用户的数据
 let code = ''
 onLoad(async () => {
   const res = await wx.login()
   code = res.code
-  // wx.showToast({
-  //   icon: 'none',
-  //   title: '登录成功',
-  // })
 })
-// 模拟手机号快捷登录
-const onGetphoneLogin = async () => {
-  const res = await postLoginWxminApi('15671615868')
-  loginSuccess(res.result as LoginResult)
-}
 // 获取用户手机号码
 const onGetphonenumber: UniHelper.ButtonOnGetphonenumber = async (ev) => {
   // const encryptedData = ev.detail!.encryptedData!
   // const iv = ev.detail!.iv!
+  const res = await postLoginWxminApi('15671615868')
+  loginSuccess(res.result as LoginResult)
+}
+// #endif
+
+// 模拟手机号快捷登录
+const onGetphoneLogin = async () => {
   const res = await postLoginWxminApi('15671615868')
   loginSuccess(res.result as LoginResult)
 }
@@ -33,7 +34,7 @@ const loginSuccess = async (data: LoginResult) => {
   // 保存会员信息
   await memberStore.setProfile(data)
   // 成功提示
-  wx.showToast({
+  uni.showToast({
     icon: 'none',
     title: '登录成功',
   })
@@ -42,6 +43,35 @@ const loginSuccess = async (data: LoginResult) => {
     uni.switchTab({ url: '/pages/my/my' })
   }, 500)
 }
+
+// #ifdef H5
+const phoneNumber = ref('')
+// 正则表达式校验规则
+const phonePattern = /^1[3456789]\d{9}$/
+let isValidPhoneNumber = ref(true)
+// 输入框失焦事件
+const validateNumber = () => {
+  // 使用正则表达式进行校验
+  setTimeout(() => {
+    isValidPhoneNumber.value = phonePattern.test(phoneNumber.value)
+  }, 1000)
+}
+// 登录事件
+const loginIn = async () => {
+  //失败
+  if (!isValidPhoneNumber.value || phoneNumber.value.length == 0) {
+    uni.showToast({
+      icon: 'error',
+      title: '请输入正确的账号',
+    })
+    return
+  } else {
+    // 正确
+    const res = await postLoginWxminApi(phoneNumber.value)
+    loginSuccess(res.result as LoginResult)
+  }
+}
+// #endif
 </script>
 
 <template>
@@ -51,15 +81,36 @@ const loginSuccess = async (data: LoginResult) => {
     </view>
     <view class="login">
       <!-- 网页端表单登录 -->
-      <!-- <input class="input" type="text" placeholder="请输入用户名/手机号码" /> -->
-      <!-- <input class="input" type="text" password placeholder="请输入密码" /> -->
-      <!-- <button class="button phone">登录</button> -->
+      <!-- #ifdef H5 -->
+      <span
+        v-if="!isValidPhoneNumber"
+        style="
+          color: rgb(222, 0, 0);
+          margin: 0 auto;
+          margin-bottom: 5px;
+          font-size: 14px;
+          margin-top: -15px;
+        "
+        >请输入正确的手机号</span
+      >
+      <input
+        class="input"
+        type="text"
+        v-model="phoneNumber"
+        placeholder="请输入用户名/手机号码"
+        @input="validateNumber"
+      />
 
+      <button class="button phone" @tap="loginIn">登录</button>
+      <!-- #endif -->
+      <!-- #ifdef MP-WEIXIN -->
       <!-- 小程序端授权登录 -->
       <button class="button phone" open-type="getPhoneNumber" @getphonenumber="onGetphonenumber">
         <text class="icon icon-phone"></text>
         手机号快捷登录
       </button>
+      <!-- #endif -->
+
       <view class="extra">
         <view class="caption">
           <text>其他登录方式</text>
@@ -71,7 +122,7 @@ const loginSuccess = async (data: LoginResult) => {
           </button>
         </view>
       </view>
-      <view class="tips">登录/注册即视为你同意《服务条款》和《小兔鲜儿隐私协议》</view>
+      <view class="tips">登录/注册即视为你同意《服务条款》和《Xmall隐私协议》</view>
     </view>
   </view>
 </template>
@@ -165,6 +216,9 @@ page {
         padding: 0;
         background-color: transparent;
       }
+      button::after {
+        border: 1px solid #fff;
+      }
     }
 
     .icon {
@@ -194,8 +248,9 @@ page {
 }
 
 .tips {
-  position: absolute;
-  bottom: 80rpx;
+  flex: 1;
+  position: relative;
+  top: 200rpx;
   left: 20rpx;
   right: 20rpx;
   font-size: 22rpx;

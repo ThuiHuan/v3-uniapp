@@ -7,7 +7,7 @@ import {
   deleteMemberOrderAPI,
 } from '@/services/order'
 import type { OrderResult } from '@/types/order'
-import { onLoad, onReady } from '@dcloudio/uni-app'
+import { onLoad, onReady, onShow } from '@dcloudio/uni-app'
 import { ref } from 'vue'
 import { OrderState, orderStateList } from '../../services/constants'
 import detailSkecton from './components/detailSkecton.vue'
@@ -49,6 +49,7 @@ const query = defineProps<{
 const pages = getCurrentPages()
 // 获取当前页面实例，数组最后一项
 const pageInstance = pages.at(-1) as any
+// #ifdef MP-WEIXIN
 // 页面渲染完毕，绑定动画效果
 onReady(() => {
   // 动画效果,导航栏背景色
@@ -78,6 +79,8 @@ onReady(() => {
     endScrollOffset: 50,
   })
 })
+// #endif
+
 // 获取订单详情
 const order = ref<OrderResult>()
 const getMemberOrderByIdData = async () => {
@@ -114,23 +117,29 @@ const onOrderPay = async () => {
     // 开发环境：模拟支付，修改订单状态为已支付
     await getPayMockAPI({ orderId: query.id })
   } else {
+    // #ifdef MP-WEIXIN
     // 生产环境：获取支付参数 + 发起微信支付
     const res = await getPayWxPayMiniPayAPI({ orderId: query.id })
     await wx.requestPayment(res.result)
+    // #endif
+    // #ifdef H5 || APP-PLUS
+    // H5端 和 App 端未开通支付-模拟支付体验
+    await getPayMockAPI({ orderId: query.id })
+    // #endif
   }
   // 关闭当前页，再跳转支付结果页
   uni.redirectTo({ url: `/pagesOrder/payment/payment?id=${query.id}` })
 }
 // 存储当前开发环境
-const isDev = import.meta.env.DEV
+// const isDev = import.meta.env.DEV
 // 模拟发货
 const onOrderSend = async () => {
-  if (isDev) {
-    await getMemberOrderConsignmentByIdAPI(query.id)
-    uni.showToast({ icon: 'success', title: '模拟发货完成' })
-    // 主动更新订单状态
-    order.value!.orderState = OrderState.DaiShouHuo
-  }
+  // if (isDev) {
+  await getMemberOrderConsignmentByIdAPI(query.id)
+  uni.showToast({ icon: 'success', title: '模拟发货完成' })
+  // 主动更新订单状态
+  order.value!.orderState = OrderState.DaiShouHuo
+  // }
 }
 // 模拟收货
 const onOrderConfirm = () => {
@@ -153,13 +162,30 @@ const onOrderDelete = () => {
     success: async (success) => {
       if (success.confirm) {
         await deleteMemberOrderAPI({ ids: [query.id] })
-        // 跳转到订单列表
-        uni.redirectTo({
-          url: '/pagesOrder/list/list',
+        uni.showToast({
+          icon: 'success',
+          title: '删除成功',
         })
+        setTimeout(() => {
+          // 跳转到订单列表
+          uni.redirectTo({
+            url: '/pagesOrder/list/list',
+          })
+        }, 200)
       }
     },
   })
+}
+// 取消订单
+const cancel = () => {
+  // 主动更新订单状态
+  order.value!.orderState = OrderState.YiQuXiao
+  uni.showToast({
+    icon: 'none',
+    title: '取消成功',
+  })
+  // 关闭弹出层
+  popup.value?.close?.()
 }
 </script>
 
@@ -202,7 +228,7 @@ const onOrderDelete = () => {
               @timeup="onTimeup"
             />
           </view>
-          <view class="button">去支付</view>
+          <view class="button" @tap="onOrderPay">去支付</view>
         </template>
         <!-- 其他订单状态:展示再次购买按钮 -->
         <template v-else>
@@ -217,11 +243,8 @@ const onOrderDelete = () => {
               再次购买
             </navigator>
             <!-- 待发货状态：模拟发货,开发期间使用,用于修改订单状态为已发货 -->
-            <view
-              v-if="isDev && order?.orderState == OrderState.DaiFaHuo"
-              @tap="onOrderSend"
-              class="button"
-            >
+            <!-- isDev && -->
+            <view v-if="order?.orderState == OrderState.DaiFaHuo" @tap="onOrderSend" class="button">
               模拟发货
             </view>
             <!-- 待收货状态: 展示确认收货 -->
@@ -277,7 +300,7 @@ const onOrderDelete = () => {
           <!-- 待评价状态:展示按钮 -->
           <view class="action" v-if="order">
             <view class="button primary">申请售后</view>
-            <navigator url="" class="button"> 去评价 </navigator>
+            <view url="" class="button"> 去评价 </view>
           </view>
         </view>
         <!-- 合计 -->
@@ -329,7 +352,11 @@ const onOrderDelete = () => {
             再次购买
           </navigator>
           <!-- 待收货状态: 展示确认收货 -->
-          <view class="button primary" v-if="order.orderState === OrderState.DaiShouHuo">
+          <view
+            class="button primary"
+            v-if="order.orderState === OrderState.DaiShouHuo"
+            @tap="onOrderConfirm"
+          >
             确认收货
           </view>
           <!-- 待评价状态: 展示去评价 -->
@@ -364,447 +391,12 @@ const onOrderDelete = () => {
       </view>
       <view class="footer">
         <view class="button" @tap="popup?.close?.()">取消</view>
-        <view class="button primary">确认</view>
+        <view class="button primary" @tap="cancel">确认</view>
       </view>
     </view>
   </uni-popup>
 </template>
 
 <style lang="scss">
-page {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  overflow: hidden;
-}
-
-.navbar {
-  width: 750rpx;
-  color: #000;
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 9;
-  /* background-color: #f8f8f8; */
-  background-color: transparent;
-
-  .wrap {
-    position: relative;
-
-    .title {
-      height: 44px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-size: 32rpx;
-      /* color: #000; */
-      color: transparent;
-    }
-
-    .back {
-      position: absolute;
-      left: 0;
-      height: 44px;
-      width: 44px;
-      font-size: 44rpx;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      /* color: #000; */
-      color: #fff;
-    }
-  }
-}
-
-.viewport {
-  background-color: #f7f7f8;
-}
-
-.overview {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-
-  line-height: 1;
-  padding-bottom: 30rpx;
-  color: #fff;
-  background-image: url(https://pcapi-xiaotuxian-front-devtest.itheima.net/miniapp/images/order_bg.png);
-  background-size: cover;
-
-  .status {
-    font-size: 36rpx;
-  }
-
-  .status::before {
-    margin-right: 6rpx;
-    font-weight: 500;
-  }
-
-  .tips {
-    margin: 30rpx 0;
-    display: flex;
-    font-size: 14px;
-    align-items: center;
-
-    .money {
-      margin-right: 30rpx;
-    }
-  }
-
-  .button-group {
-    margin-top: 30rpx;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-
-  .button {
-    width: 260rpx;
-    height: 64rpx;
-    margin: 0 10rpx;
-    text-align: center;
-    line-height: 64rpx;
-    font-size: 28rpx;
-    color: #27ba9b;
-    border-radius: 68rpx;
-    background-color: #fff;
-  }
-}
-
-.shipment {
-  line-height: 1.4;
-  padding: 0 20rpx;
-  margin: 20rpx 20rpx 0;
-  border-radius: 10rpx;
-  background-color: #fff;
-
-  .locate,
-  .item {
-    min-height: 120rpx;
-    padding: 30rpx 30rpx 25rpx 75rpx;
-    background-size: 50rpx;
-    background-repeat: no-repeat;
-    background-position: 6rpx center;
-  }
-
-  .locate {
-    background-image: url(https://pcapi-xiaotuxian-front-devtest.itheima.net/miniapp/images/locate.png);
-
-    .user {
-      font-size: 26rpx;
-      color: #444;
-    }
-
-    .address {
-      font-size: 24rpx;
-      color: #666;
-    }
-  }
-
-  .item {
-    background-image: url(https://pcapi-xiaotuxian-front-devtest.itheima.net/miniapp/images/car.png);
-    border-bottom: 1rpx solid #eee;
-    position: relative;
-
-    .message {
-      font-size: 26rpx;
-      color: #444;
-    }
-
-    .date {
-      font-size: 24rpx;
-      color: #666;
-    }
-  }
-}
-
-.goods {
-  margin: 20rpx 20rpx 0;
-  padding: 0 20rpx;
-  border-radius: 10rpx;
-  background-color: #fff;
-
-  .item {
-    padding: 30rpx 0;
-    border-bottom: 1rpx solid #eee;
-
-    .navigator {
-      display: flex;
-      margin: 20rpx 0;
-    }
-
-    .cover {
-      width: 170rpx;
-      height: 170rpx;
-      border-radius: 10rpx;
-      margin-right: 20rpx;
-    }
-
-    .meta {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      position: relative;
-    }
-
-    .name {
-      height: 80rpx;
-      font-size: 26rpx;
-      color: #444;
-    }
-
-    .type {
-      line-height: 1.8;
-      padding: 0 15rpx;
-      margin-top: 6rpx;
-      font-size: 24rpx;
-      align-self: flex-start;
-      border-radius: 4rpx;
-      color: #888;
-      background-color: #f7f7f8;
-    }
-
-    .price {
-      display: flex;
-      margin-top: 6rpx;
-      font-size: 24rpx;
-    }
-
-    .symbol {
-      font-size: 20rpx;
-    }
-
-    .original {
-      color: #999;
-      text-decoration: line-through;
-    }
-
-    .actual {
-      margin-left: 10rpx;
-      color: #444;
-    }
-
-    .text {
-      font-size: 22rpx;
-    }
-
-    .quantity {
-      position: absolute;
-      bottom: 0;
-      right: 0;
-      font-size: 24rpx;
-      color: #444;
-    }
-
-    .action {
-      display: flex;
-      flex-direction: row-reverse;
-      justify-content: flex-start;
-      padding: 30rpx 0 0;
-
-      .button {
-        width: 200rpx;
-        height: 60rpx;
-        text-align: center;
-        justify-content: center;
-        line-height: 60rpx;
-        margin-left: 20rpx;
-        border-radius: 60rpx;
-        border: 1rpx solid #ccc;
-        font-size: 26rpx;
-        color: #444;
-      }
-
-      .primary {
-        color: #27ba9b;
-        border-color: #27ba9b;
-      }
-    }
-  }
-
-  .total {
-    line-height: 1;
-    font-size: 26rpx;
-    padding: 20rpx 0;
-    color: #666;
-
-    .row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 10rpx 0;
-    }
-
-    .symbol::before {
-      content: '¥';
-      font-size: 80%;
-      margin-right: 3rpx;
-    }
-
-    .primary {
-      color: #cf4444;
-      font-size: 36rpx;
-    }
-  }
-}
-
-.detail {
-  line-height: 1;
-  padding: 30rpx 20rpx 0;
-  margin: 20rpx 20rpx 0;
-  font-size: 26rpx;
-  color: #666;
-  border-radius: 10rpx;
-  background-color: #fff;
-
-  .title {
-    font-size: 30rpx;
-    color: #444;
-  }
-
-  .row {
-    padding: 20rpx 0;
-
-    .item {
-      padding: 10rpx 0;
-      display: flex;
-      align-items: center;
-    }
-
-    .copy {
-      border-radius: 20rpx;
-      font-size: 20rpx;
-      border: 1px solid #ccc;
-      padding: 5rpx 10rpx;
-      margin-left: 10rpx;
-    }
-  }
-}
-
-.toolbar-height {
-  height: 100rpx;
-  box-sizing: content-box;
-}
-
-.toolbar {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: calc(var(--window-bottom));
-  z-index: 1;
-
-  height: 100rpx;
-  padding: 0 20rpx;
-  display: flex;
-  align-items: center;
-  flex-direction: row-reverse;
-  border-top: 1rpx solid #ededed;
-  border-bottom: 1rpx solid #ededed;
-  background-color: #fff;
-  box-sizing: content-box;
-
-  .button {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-
-    width: 200rpx;
-    height: 72rpx;
-    margin-left: 15rpx;
-    font-size: 26rpx;
-    border-radius: 72rpx;
-    border: 1rpx solid #ccc;
-    color: #444;
-  }
-
-  .delete {
-    color: #cf4444;
-    order: 4;
-  }
-
-  .button {
-    order: 3;
-  }
-
-  .secondary {
-    order: 2;
-    color: #27ba9b;
-    border-color: #27ba9b;
-  }
-
-  .primary {
-    order: 1;
-    color: #fff;
-    background-color: #27ba9b;
-  }
-}
-
-.popup-root {
-  padding: 30rpx 30rpx 0;
-  border-radius: 10rpx 10rpx 0 0;
-  overflow: hidden;
-
-  .title {
-    font-size: 30rpx;
-    text-align: center;
-    margin-bottom: 30rpx;
-  }
-
-  .description {
-    font-size: 28rpx;
-    padding: 0 20rpx;
-
-    .tips {
-      color: #444;
-      margin-bottom: 12rpx;
-    }
-
-    .cell {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 15rpx 0;
-      color: #666;
-    }
-
-    .icon::before {
-      content: '\e6cd';
-      font-family: 'erabbit' !important;
-      font-size: 38rpx;
-      color: #999;
-    }
-
-    .icon.checked::before {
-      content: '\e6cc';
-      font-size: 38rpx;
-      color: #27ba9b;
-    }
-  }
-
-  .footer {
-    display: flex;
-    justify-content: space-between;
-    padding: 30rpx 0 40rpx;
-    font-size: 28rpx;
-    color: #444;
-
-    .button {
-      flex: 1;
-      height: 72rpx;
-      text-align: center;
-      line-height: 72rpx;
-      margin: 0 20rpx;
-      color: #444;
-      border-radius: 72rpx;
-      border: 1rpx solid #ccc;
-    }
-
-    .primary {
-      color: #fff;
-      background-color: #27ba9b;
-      border: none;
-    }
-  }
-}
+@import './components/styles/detail.scss';
 </style>

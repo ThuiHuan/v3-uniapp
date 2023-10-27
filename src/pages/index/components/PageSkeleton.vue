@@ -157,17 +157,15 @@
     </view>
   </view>
 </template>
-<style lang="scss" scoped>
-/*
-此文件为开发者工具生成，生成时间: 2023/10/8上午12:49:27
+<style lang="scss">
+// h5端默认开启scoped样式隔离，导致组件基础样式无效
+/* #ifdef H5 */
+@import '@/components/styles/XmlSwiper.scss';
+@import './styles/CategoryPanel.scss';
+@import './styles/HotPanel.scss';
+@import '@/components/styles/XmlGuess.scss';
+/* #endif */
 
-在 D:\Web-Project\vue3+uniapp\vue3-uniapp\shop-priject\dist\dev\mp-weixin\pages\index\index.wxss 中引入样式
-```
-@import "./index.skeleton.wxss";
-```
-
-更多详细信息可以参考文档：https://developers.weixin.qq.com/miniprogram/dev/devtools/skeleton.html
-*/
 .sk-transparent {
   color: transparent !important;
 }

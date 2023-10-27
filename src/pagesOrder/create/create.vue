@@ -54,7 +54,6 @@ const getMemberOrderPreData = async () => {
     const res = await getMemberOrderPreAPI()
     orderPre.value = res.result
   }
-  console.log(orderPre.value)
 }
 onLoad(() => {
   getMemberOrderPreData()

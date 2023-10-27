@@ -20,6 +20,7 @@ onLoad(() => {
 
 // 修改头像
 const onAvatarChange = () => {
+  // #ifdef MP-WEIXIN
   // 调用拍照/选中图片
   uni.chooseMedia({
     // 文件个数
@@ -51,6 +52,42 @@ const onAvatarChange = () => {
       })
     },
   })
+  // #endif
+  // #ifdef H5
+  uni.chooseImage({
+    count: 1,
+    success: (success) => {
+      // 本地路径
+      const tempFilePath = success.tempFilePaths[0]
+      // 文件上传
+      uni.uploadFile({
+        url: '/member/profile/avatar',
+        name: 'file', // 后端数据字段名
+        filePath: tempFilePath, // 新头像
+        // 成功
+        success: (res: any) => {
+          if (res.statusCode === 200) {
+            // 提取头像
+            const { avatar } = JSON.parse(res.data).result
+            // 当前页面更新头像
+            profile.value!.avatar = avatar
+            // 更新 Store 头像
+            memberStore.profile!.avatar = avatar
+            uni.showToast({ icon: 'success', title: '更新成功' })
+          } else {
+            uni.showToast({ icon: 'error', title: '出现错误' })
+          }
+        },
+      })
+    },
+    fail: (error) => {
+      uni.showToast({
+        icon: 'error',
+        title: '上传成功',
+      })
+    },
+  })
+  // #endif
 }
 // 修改性别
 const onGenderChange: UniHelper.RadioGroupOnChange = (ev) => {
@@ -65,6 +102,7 @@ let fullLocationCode: [string, string, string] = ['', '', '']
 const onFullLocationChange: UniHelper.RegionPickerOnChange = (ev) => {
   // 修改前端界面
   profile.value.fullLocation = ev.detail.value.join(' ')
+
   // 提交后端更新
   fullLocationCode = ev.detail.code!
 }
@@ -142,6 +180,7 @@ const save = async () => {
             <view class="placeholder" v-else>请选择日期</view>
           </picker>
         </view>
+        <!-- #ifdef MP-WEIXIN -->
         <view class="form-item">
           <text class="label">城市</text>
           <picker
@@ -154,6 +193,8 @@ const save = async () => {
             <view class="placeholder" v-else>请选择城市</view>
           </picker>
         </view>
+        <!-- #endif -->
+
         <view class="form-item">
           <text class="label">职业</text>
           <input class="input" type="text" placeholder="请填写职业" v-model="profile!.profession" />

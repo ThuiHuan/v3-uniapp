@@ -4,7 +4,6 @@ import {
   postMemberAddressAPI,
   putMemberAddressByIdAPI,
 } from '@/services/address'
-import { putMemberProfileAPI } from '@/services/profile'
 import { onLoad } from '@dcloudio/uni-app'
 import { ref } from 'vue'
 
@@ -100,6 +99,32 @@ const rules: UniHelper.UniFormsRules = {
     rules: [{ required: true, errorMessage: '请选择详细地址' }],
   },
 }
+// #ifdef H5
+const column = 3
+let maskCloseAble = ref(true)
+const visible = ref(false)
+// 确认
+const confirm = (val: any) => {
+  // 收集后端所需的 code 数据
+  Object.assign(form.value, {
+    provinceCode: val.provinceCode,
+    cityCode: val.cityCode,
+    countyCode: val.areaCode,
+  })
+  // 渲染前端数据
+  form.value.fullLocation = val.fullLocation
+  // 隐藏弹窗
+  visible.value = false
+}
+// 打开弹窗
+const open = () => {
+  visible.value = true
+}
+// 弹窗取消
+const cancel = () => {
+  visible.value = false
+}
+// #endif
 </script>
 
 <template>
@@ -114,17 +139,35 @@ const rules: UniHelper.UniFormsRules = {
         <text class="label">手机号码</text>
         <input class="input" placeholder="请填写收货人手机号码" v-model="form.contact" />
       </uni-forms-item>
-      <uni-forms-item class="form-item" name="fullLocation">
+      <uni-forms-item name="countyCode" class="form-item">
         <text class="label">所在地区</text>
+        <!-- #ifdef MP-WEIXIN -->
         <picker
+          @change="onRegionChange"
           class="picker"
           mode="region"
           :value="form.fullLocation.split(' ')"
-          @change="onRegionChange"
         >
           <view v-if="form.fullLocation">{{ form.fullLocation }}</view>
           <view v-else class="placeholder">请选择省/市/区(县)</view>
         </picker>
+        <!-- #endif -->
+
+        <!-- #ifdef H5-->
+        <input
+          type="text"
+          placeholder="请选择省/市/区(县)"
+          @tap="open"
+          v-model="form.fullLocation"
+        />
+        <piaoyi-cityPicker
+          :column="column"
+          :mask-close-able="maskCloseAble"
+          @confirm="confirm"
+          @cancel="cancel"
+          :visible="visible"
+        />
+        <!-- #endif -->
       </uni-forms-item>
       <uni-forms-item class="form-item" name="address">
         <text class="label">详细地址</text>
@@ -143,6 +186,7 @@ const rules: UniHelper.UniFormsRules = {
   </view>
   <!-- 提交按钮 -->
   <button class="button" @tap="submit">保存并使用</button>
+  <text />
 </template>
 
 <style lang="scss">

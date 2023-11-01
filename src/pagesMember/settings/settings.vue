@@ -41,7 +41,7 @@ const onLogout = () => {
     </view>
     <!-- 列表3 -->
     <view class="list">
-      <navigator hover-class="none" class="item arrow" url=" ">关于Xmall</navigator>
+      <view hover-class="none" class="item arrow">关于Xmall</view>
     </view>
     <!-- 操作按钮 -->
     <view class="action" @tap="onLogout" v-if="memberStore.profile">
